@@ -1,3 +1,4 @@
+from app.models.user import User
 from app.database import SessionLocal
 from app.models.trip import Trip
 from app.database import engine
@@ -122,5 +123,56 @@ async def update_trip(trip_id: int, updated_trip: dict):
             "total_gallons": trip.total_gallons,
             "total_stops": trip.total_stops,
             "status": trip.status
+        }
+    }
+@app.post("/signup")
+async def signup(user: dict):
+    db = SessionLocal()
+
+    existing_user = db.query(User).filter(User.email == user["email"]).first()
+
+    if existing_user:
+        return {"message": "User already exists"}
+
+    new_user = User(
+        username=user["username"],
+        email=user["email"],
+        password=user["password"]
+    )
+
+    db.add(new_user)
+
+    db.commit()
+
+    db.refresh(new_user)
+
+    return {
+        "message": "User created successfully",
+        "user": {
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email
+        }
+    }
+@app.post("/login")
+async def login(user: dict):
+    db = SessionLocal()
+
+    existing_user = db.query(User).filter(
+        User.email == user["email"]
+    ).first()
+
+    if not existing_user:
+        return {"message": "User not found"}
+
+    if existing_user.password != user["password"]:
+        return {"message": "Incorrect password"}
+
+    return {
+        "message": "Login successful",
+        "user": {
+            "id": existing_user.id,
+            "username": existing_user.username,
+            "email": existing_user.email
         }
     }

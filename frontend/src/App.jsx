@@ -11,6 +11,10 @@ function App() {
   const [totalStops, setTotalStops] = useState("");
   const [status, setStatus] = useState("");
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
     fetch("http://localhost:8000/trips")
       .then((response) => response.json())
@@ -24,6 +28,27 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+  const loginUser = async () => {
+    const response = await fetch("http://localhost:8000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.user) {
+      setUser(data.user);
+    } else {
+      alert(data.message);
+    }
+  };
 
   const createTrip = async () => {
     const response = await fetch("http://localhost:8000/trips", {
@@ -43,16 +68,42 @@ function App() {
 
     console.log(data);
 
-   setTrips([...trips, data.trip]);
+    setTrips([...trips, data.trip]);
   };
 
   const deleteTrip = async (tripId) => {
-  await fetch(`http://localhost:8000/trips/${tripId}`, {
-    method: "DELETE",
-  });
+    await fetch(`http://localhost:8000/trips/${tripId}`, {
+      method: "DELETE",
+    });
 
-  setTrips(trips.filter((trip) => trip.id !== tripId));
-};
+    setTrips(trips.filter((trip) => trip.id !== tripId));
+  };
+
+  if (!user) {
+    return (
+      <div className="container">
+        <h1>Login</h1>
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button onClick={loginUser}>
+          Login
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return <h2>Loading trips...</h2>;
@@ -65,6 +116,11 @@ function App() {
   return (
     <div className="container">
       <h1>Trip Summary System</h1>
+
+      <h3>Welcome, {user.username}</h3>
+      <button onClick={() => setUser(null)}>
+    Logout
+    </button>
 
       <div className="form-container">
         <input
@@ -95,7 +151,9 @@ function App() {
           onChange={(e) => setStatus(e.target.value)}
         />
 
-        <button onClick={createTrip}>Add Trip</button>
+        <button onClick={createTrip}>
+          Add Trip
+        </button>
       </div>
 
       {trips.map((trip) => (
