@@ -73,9 +73,54 @@ async def create_trip(trip: dict):
     db.refresh(new_trip)
 
     return {
-        "id": new_trip.id,
-        "driver_name": new_trip.driver_name,
-        "total_gallons": new_trip.total_gallons,
-        "total_stops": new_trip.total_stops,
-        "status": new_trip.status
+        "message": "Trip created successfully",
+        "trip": {
+            "id": new_trip.id,
+            "driver_name": new_trip.driver_name,
+            "total_gallons": new_trip.total_gallons,
+            "total_stops": new_trip.total_stops,
+            "status": new_trip.status
+        }
+    }
+@app.delete("/trips/{trip_id}")
+async def delete_trip(trip_id: int):
+    db = SessionLocal()
+
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+
+    if not trip:
+        return {"message": "Trip not found"}
+
+    db.delete(trip)
+
+    db.commit()
+
+    return {"message": "Trip deleted successfully"}
+@app.put("/update-trip/{trip_id}")
+async def update_trip(trip_id: int, updated_trip: dict):
+    db = SessionLocal()
+
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+
+    if trip is None:
+        return {"message": "Trip not found"}
+
+    trip.driver_name = updated_trip["driver_name"]
+    trip.total_gallons = updated_trip["total_gallons"]
+    trip.total_stops = updated_trip["total_stops"]
+    trip.status = updated_trip["status"]
+
+    db.commit()
+
+    db.refresh(trip)
+
+    return {
+        "message": "Trip updated successfully",
+        "trip": {
+            "id": trip.id,
+            "driver_name": trip.driver_name,
+            "total_gallons": trip.total_gallons,
+            "total_stops": trip.total_stops,
+            "status": trip.status
+        }
     }

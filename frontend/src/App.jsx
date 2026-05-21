@@ -1,11 +1,14 @@
+import "./App.css";
 import { useEffect, useState } from "react";
 
 function App() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [driverName, setDriverName] = useState("");
-  const [gallons, setGallons] = useState("");
+  const [totalGallons, setTotalGallons] = useState("");
+  const [totalStops, setTotalStops] = useState("");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -21,35 +24,34 @@ function App() {
         setLoading(false);
       });
   }, []);
-  const createTrip = async () => {
-  const newTrip = {
-    driver_name: driverName,
-    total_gallons: gallons,
-    status: status,
-  };
 
-  try {
+  const createTrip = async () => {
     const response = await fetch("http://localhost:8000/trips", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(newTrip),
+      body: JSON.stringify({
+        driver_name: driverName,
+        total_gallons: Number(totalGallons),
+        total_stops: Number(totalStops),
+        status: status,
+      }),
     });
 
     const data = await response.json();
 
     console.log(data);
-    setTrips([...trips, data.trip]);
 
-    alert("Trip created successfully!");
-    
-    setDriverName("");
-    setGallons("");
-    setStatus("");
-  } catch (error) {
-    console.error(error);
-  }
+   setTrips([...trips, data.trip]);
+  };
+
+  const deleteTrip = async (tripId) => {
+  await fetch(`http://localhost:8000/trips/${tripId}`, {
+    method: "DELETE",
+  });
+
+  setTrips(trips.filter((trip) => trip.id !== tripId));
 };
 
   if (loading) {
@@ -61,38 +63,54 @@ function App() {
   }
 
   return (
-    <div>
+    <div className="container">
       <h1>Trip Summary System</h1>
-        <div>
-  <input
-    type="text"
-    placeholder="Driver Name"
-    value={driverName}
-    onChange={(e) => setDriverName(e.target.value)}
-  />
 
-  <input
-    type="text"
-    placeholder="Total Gallons"
-    value={gallons}
-    onChange={(e) => setGallons(e.target.value)}
-  />
+      <div className="form-container">
+        <input
+          type="text"
+          placeholder="Driver Name"
+          value={driverName}
+          onChange={(e) => setDriverName(e.target.value)}
+        />
 
-  <input
-    type="text"
-    placeholder="Status"
-    value={status}
-    onChange={(e) => setStatus(e.target.value)}
-  />
+        <input
+          type="number"
+          placeholder="Total Gallons"
+          value={totalGallons}
+          onChange={(e) => setTotalGallons(e.target.value)}
+        />
 
-  <button onClick={createTrip}>Add Trip</button>
-</div>
+        <input
+          type="number"
+          placeholder="Total Stops"
+          value={totalStops}
+          onChange={(e) => setTotalStops(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="Status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        />
+
+        <button onClick={createTrip}>Add Trip</button>
+      </div>
+
       {trips.map((trip) => (
-        <div key={trip.id}>
+        <div key={trip.id} className="trip-card">
           <h3>{trip.driver_name}</h3>
+
           <p>Gallons: {trip.total_gallons}</p>
+
+          <p>Stops: {trip.total_stops}</p>
+
           <p>Status: {trip.status}</p>
-          <hr />
+
+          <button onClick={() => deleteTrip(trip.id)}>
+            Delete
+          </button>
         </div>
       ))}
     </div>
