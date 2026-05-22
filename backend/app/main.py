@@ -3,11 +3,11 @@ from app.database import SessionLocal
 from app.models.trip import Trip
 from app.database import engine
 from app.database import Base
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,6 +22,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 @app.get("/trips")
 async def get_trips():
     db = SessionLocal()
@@ -39,23 +41,36 @@ async def get_trips():
             "status": trip.status
         })
 
+    db.close()
+
     return result
+
+
 @app.get("/trips/{trip_id}")
 async def get_single_trip(trip_id: int):
     db = SessionLocal()
 
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(
+        Trip.id == trip_id
+    ).first()
 
     if not trip:
+        db.close()
         return {"message": "Trip not found"}
 
-    return {
+    result = {
         "id": trip.id,
         "driver_name": trip.driver_name,
         "total_gallons": trip.total_gallons,
         "total_stops": trip.total_stops,
         "status": trip.status
     }
+
+    db.close()
+
+    return result
+
+
 @app.post("/trips")
 async def create_trip(trip: dict):
     db = SessionLocal()
@@ -73,7 +88,7 @@ async def create_trip(trip: dict):
 
     db.refresh(new_trip)
 
-    return {
+    result = {
         "message": "Trip created successfully",
         "trip": {
             "id": new_trip.id,
@@ -83,27 +98,43 @@ async def create_trip(trip: dict):
             "status": new_trip.status
         }
     }
+
+    db.close()
+
+    return result
+
+
 @app.delete("/trips/{trip_id}")
 async def delete_trip(trip_id: int):
     db = SessionLocal()
 
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(
+        Trip.id == trip_id
+    ).first()
 
     if not trip:
+        db.close()
         return {"message": "Trip not found"}
 
     db.delete(trip)
 
     db.commit()
 
+    db.close()
+
     return {"message": "Trip deleted successfully"}
+
+
 @app.put("/update-trip/{trip_id}")
 async def update_trip(trip_id: int, updated_trip: dict):
     db = SessionLocal()
 
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(
+        Trip.id == trip_id
+    ).first()
 
     if trip is None:
+        db.close()
         return {"message": "Trip not found"}
 
     trip.driver_name = updated_trip["driver_name"]
@@ -115,7 +146,7 @@ async def update_trip(trip_id: int, updated_trip: dict):
 
     db.refresh(trip)
 
-    return {
+    result = {
         "message": "Trip updated successfully",
         "trip": {
             "id": trip.id,
@@ -125,13 +156,22 @@ async def update_trip(trip_id: int, updated_trip: dict):
             "status": trip.status
         }
     }
+
+    db.close()
+
+    return result
+
+
 @app.post("/signup")
 async def signup(user: dict):
     db = SessionLocal()
 
-    existing_user = db.query(User).filter(User.email == user["email"]).first()
+    existing_user = db.query(User).filter(
+        User.email == user["email"]
+    ).first()
 
     if existing_user:
+        db.close()
         return {"message": "User already exists"}
 
     new_user = User(
@@ -146,7 +186,7 @@ async def signup(user: dict):
 
     db.refresh(new_user)
 
-    return {
+    result = {
         "message": "User created successfully",
         "user": {
             "id": new_user.id,
@@ -154,6 +194,12 @@ async def signup(user: dict):
             "email": new_user.email
         }
     }
+
+    db.close()
+
+    return result
+
+
 @app.post("/login")
 async def login(user: dict):
     db = SessionLocal()
@@ -163,12 +209,14 @@ async def login(user: dict):
     ).first()
 
     if not existing_user:
+        db.close()
         return {"message": "User not found"}
 
     if existing_user.password != user["password"]:
+        db.close()
         return {"message": "Incorrect password"}
 
-    return {
+    result = {
         "message": "Login successful",
         "user": {
             "id": existing_user.id,
@@ -176,3 +224,7 @@ async def login(user: dict):
             "email": existing_user.email
         }
     }
+
+    db.close()
+
+    return result

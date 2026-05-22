@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [trips, setTrips] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [driverName, setDriverName] = useState("");
@@ -13,9 +13,16 @@ function App() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
+
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user")) || null
+  );
 
   useEffect(() => {
+    if (!user) return;
+
+    setLoading(true);
+
     fetch("http://localhost:8000/trips")
       .then((response) => response.json())
       .then((data) => {
@@ -27,7 +34,7 @@ function App() {
         setError("Failed to load trips");
         setLoading(false);
       });
-  }, []);
+  }, [user]);
 
   const loginUser = async () => {
     const response = await fetch("http://localhost:8000/login", {
@@ -45,6 +52,11 @@ function App() {
 
     if (data.user) {
       setUser(data.user);
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
     } else {
       alert(data.message);
     }
@@ -66,9 +78,12 @@ function App() {
 
     const data = await response.json();
 
-    console.log(data);
-
     setTrips([...trips, data.trip]);
+
+    setDriverName("");
+    setTotalGallons("");
+    setTotalStops("");
+    setStatus("");
   };
 
   const deleteTrip = async (tripId) => {
@@ -76,7 +91,9 @@ function App() {
       method: "DELETE",
     });
 
-    setTrips(trips.filter((trip) => trip.id !== tripId));
+    setTrips(
+      trips.filter((trip) => trip.id !== tripId)
+    );
   };
 
   if (!user) {
@@ -88,14 +105,18 @@ function App() {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
         />
 
         <input
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
         />
 
         <button onClick={loginUser}>
@@ -118,37 +139,51 @@ function App() {
       <h1>Trip Summary System</h1>
 
       <h3>Welcome, {user.username}</h3>
-      <button onClick={() => setUser(null)}>
-    Logout
-    </button>
+
+      <button
+        onClick={() => {
+          localStorage.removeItem("user");
+          setUser(null);
+        }}
+      >
+        Logout
+      </button>
 
       <div className="form-container">
         <input
           type="text"
           placeholder="Driver Name"
           value={driverName}
-          onChange={(e) => setDriverName(e.target.value)}
+          onChange={(e) =>
+            setDriverName(e.target.value)
+          }
         />
 
         <input
           type="number"
           placeholder="Total Gallons"
           value={totalGallons}
-          onChange={(e) => setTotalGallons(e.target.value)}
+          onChange={(e) =>
+            setTotalGallons(e.target.value)
+          }
         />
 
         <input
           type="number"
           placeholder="Total Stops"
           value={totalStops}
-          onChange={(e) => setTotalStops(e.target.value)}
+          onChange={(e) =>
+            setTotalStops(e.target.value)
+          }
         />
 
         <input
           type="text"
           placeholder="Status"
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={(e) =>
+            setStatus(e.target.value)
+          }
         />
 
         <button onClick={createTrip}>
@@ -157,16 +192,27 @@ function App() {
       </div>
 
       {trips.map((trip) => (
-        <div key={trip.id} className="trip-card">
+        <div
+          key={trip.id}
+          className="trip-card"
+        >
           <h3>{trip.driver_name}</h3>
 
-          <p>Gallons: {trip.total_gallons}</p>
+          <p>
+            Gallons: {trip.total_gallons}
+          </p>
 
-          <p>Stops: {trip.total_stops}</p>
+          <p>
+            Stops: {trip.total_stops}
+          </p>
 
           <p>Status: {trip.status}</p>
 
-          <button onClick={() => deleteTrip(trip.id)}>
+          <button
+            onClick={() =>
+              deleteTrip(trip.id)
+            }
+          >
             Delete
           </button>
         </div>
