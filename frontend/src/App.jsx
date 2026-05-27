@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [trips, setTrips] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [templates, setTemplates] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -10,6 +14,20 @@ function App() {
   const [totalGallons, setTotalGallons] = useState("");
   const [totalStops, setTotalStops] = useState("");
   const [status, setStatus] = useState("");
+
+  const [customerName, setCustomerName] = useState("");
+  const [billingAddress, setBillingAddress] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+
+  const [vendorName, setVendorName] = useState("");
+  const [vendorAddress, setVendorAddress] = useState("");
+  const [vendorEmail, setVendorEmail] = useState("");
+
+  const [documentType, setDocumentType] = useState("");
+
+  const [showFees, setShowFees] = useState(false);
+  const [showTaxes, setShowTaxes] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,11 +45,29 @@ function App() {
       .then((response) => response.json())
       .then((data) => {
         setTrips(data);
+      });
+
+    fetch("http://localhost:8000/customers")
+      .then((response) => response.json())
+      .then((data) => {
+        setCustomers(data);
+      });
+
+    fetch("http://localhost:8000/vendors")
+      .then((response) => response.json())
+      .then((data) => {
+        setVendors(data);
+      });
+
+    fetch("http://localhost:8000/document-templates")
+      .then((response) => response.json())
+      .then((data) => {
+        setTemplates(data);
         setLoading(false);
       })
       .catch((error) => {
         console.error(error);
-        setError("Failed to load trips");
+        setError("Failed to load data");
         setLoading(false);
       });
   }, [user]);
@@ -86,6 +122,84 @@ function App() {
     setStatus("");
   };
 
+  const createCustomer = async () => {
+    const response = await fetch(
+      "http://localhost:8000/customers",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: customerName,
+          billing_address: billingAddress,
+          email: customerEmail,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    setCustomers([...customers, data]);
+
+    setCustomerName("");
+    setBillingAddress("");
+    setCustomerEmail("");
+  };
+
+  const createVendor = async () => {
+    const response = await fetch(
+      "http://localhost:8000/vendors",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: vendorName,
+          address: vendorAddress,
+          email: vendorEmail,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    setVendors([...vendors, data]);
+
+    setVendorName("");
+    setVendorAddress("");
+    setVendorEmail("");
+  };
+
+  const createTemplate = async () => {
+    const response = await fetch(
+      "http://localhost:8000/document-templates",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          document_type: documentType,
+          show_fees: showFees,
+          show_taxes: showTaxes,
+          show_logo: showLogo,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    setTemplates([...templates, data]);
+
+    setDocumentType("");
+
+    setShowFees(false);
+    setShowTaxes(false);
+    setShowLogo(false);
+  };
+
   const deleteTrip = async (tripId) => {
     await fetch(`http://localhost:8000/trips/${tripId}`, {
       method: "DELETE",
@@ -127,7 +241,7 @@ function App() {
   }
 
   if (loading) {
-    return <h2>Loading trips...</h2>;
+    return <h2>Loading...</h2>;
   }
 
   if (error) {
@@ -148,6 +262,8 @@ function App() {
       >
         Logout
       </button>
+
+      <h2>Add Trip</h2>
 
       <div className="form-container">
         <input
@@ -190,6 +306,182 @@ function App() {
           Add Trip
         </button>
       </div>
+
+      <h2>Customer Management</h2>
+
+      <div className="form-container">
+        <input
+          type="text"
+          placeholder="Customer Name"
+          value={customerName}
+          onChange={(e) =>
+            setCustomerName(e.target.value)
+          }
+        />
+
+        <input
+          type="text"
+          placeholder="Billing Address"
+          value={billingAddress}
+          onChange={(e) =>
+            setBillingAddress(e.target.value)
+          }
+        />
+
+        <input
+          type="email"
+          placeholder="Customer Email"
+          value={customerEmail}
+          onChange={(e) =>
+            setCustomerEmail(e.target.value)
+          }
+        />
+
+        <button onClick={createCustomer}>
+          Add Customer
+        </button>
+      </div>
+
+      {customers.map((customer) => (
+        <div
+          key={customer.id}
+          className="trip-card"
+        >
+          <h3>{customer.name}</h3>
+
+          <p>
+            Address: {customer.billing_address}
+          </p>
+
+          <p>Email: {customer.email}</p>
+        </div>
+      ))}
+
+      <h2>Vendor Management</h2>
+
+      <div className="form-container">
+        <input
+          type="text"
+          placeholder="Vendor Name"
+          value={vendorName}
+          onChange={(e) =>
+            setVendorName(e.target.value)
+          }
+        />
+
+        <input
+          type="text"
+          placeholder="Vendor Address"
+          value={vendorAddress}
+          onChange={(e) =>
+            setVendorAddress(e.target.value)
+          }
+        />
+
+        <input
+          type="email"
+          placeholder="Vendor Email"
+          value={vendorEmail}
+          onChange={(e) =>
+            setVendorEmail(e.target.value)
+          }
+        />
+
+        <button onClick={createVendor}>
+          Add Vendor
+        </button>
+      </div>
+
+      {vendors.map((vendor) => (
+        <div
+          key={vendor.id}
+          className="trip-card"
+        >
+          <h3>{vendor.name}</h3>
+
+          <p>
+            Address: {vendor.address}
+          </p>
+
+          <p>Email: {vendor.email}</p>
+        </div>
+      ))}
+
+      <h2>Document Templates</h2>
+
+      <div className="form-container">
+        <input
+          type="text"
+          placeholder="Document Type"
+          value={documentType}
+          onChange={(e) =>
+            setDocumentType(e.target.value)
+          }
+        />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showFees}
+            onChange={(e) =>
+              setShowFees(e.target.checked)
+            }
+          />
+          Show Fees
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showTaxes}
+            onChange={(e) =>
+              setShowTaxes(e.target.checked)
+            }
+          />
+          Show Taxes
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showLogo}
+            onChange={(e) =>
+              setShowLogo(e.target.checked)
+            }
+          />
+          Show Logo
+        </label>
+
+        <button onClick={createTemplate}>
+          Add Template
+        </button>
+      </div>
+
+      {templates.map((template) => (
+        <div
+          key={template.id}
+          className="trip-card"
+        >
+          <h3>{template.document_type}</h3>
+
+          <p>
+            Show Fees:
+            {template.show_fees ? " Yes" : " No"}
+          </p>
+
+          <p>
+            Show Taxes:
+            {template.show_taxes ? " Yes" : " No"}
+          </p>
+
+          <p>
+            Show Logo:
+            {template.show_logo ? " Yes" : " No"}
+          </p>
+        </div>
+      ))}
+
+      <h2>Trips</h2>
 
       {trips.map((trip) => (
         <div
